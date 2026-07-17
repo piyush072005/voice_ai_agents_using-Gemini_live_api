@@ -22,5 +22,7 @@ def handle_availability():
     return jsonify({"result": result})
 
 if __name__ == '__main__':
-    print("🚀 Local API Bridge running on http://127.0.0.1:5000")
+    import sys, io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    print("[OK] Local API Bridge running on http://127.0.0.1:5000")
     app.run(port=5000)

@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NovaVoice - AI Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-color: #0f172a;
@@ -21,7 +23,7 @@
             padding: 0;
             background-color: var(--bg-color);
             color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -200,14 +202,144 @@
             border: none;
             font-weight: bold;
             cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
         }
+        .btn-start:hover { transform: scale(1.03); box-shadow: 0 0 20px rgba(16,185,129,0.4); }
+
+        /* ── Mode Tabs ─────────────────────────────── */
+        .mode-tabs {
+            display: flex;
+            gap: 0;
+            background: var(--surface);
+            border-radius: 12px;
+            border: 1px solid #334155;
+            overflow: hidden;
+            margin-bottom: 1.25rem;
+            width: 90%;
+            max-width: 500px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 0.65rem 1rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+        }
+        .tab-btn.active {
+            background: rgba(59,130,246,0.15);
+            color: var(--accent);
+        }
+        .tab-btn:hover:not(.active) { background: rgba(255,255,255,0.04); color: var(--text-main); }
+
+        /* ── Text Chat Panel ────────────────────────── */
+        .text-panel {
+            display: none;
+            flex-direction: column;
+            width: 90%;
+            max-width: 500px;
+            gap: 0;
+        }
+        .text-panel.visible { display: flex; }
+
+        .text-input-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+        .text-input {
+            flex: 1;
+            padding: 0.85rem 1.1rem;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            background: var(--surface);
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            resize: none;
+            min-height: 46px;
+            max-height: 120px;
+            overflow-y: auto;
+            line-height: 1.5;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .text-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+        }
+        .text-input::placeholder { color: #4b5563; }
+
+        .send-btn {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            border: none;
+            background: var(--accent);
+            color: white;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s, transform 0.1s;
+            flex-shrink: 0;
+            align-self: flex-end;
+        }
+        .send-btn:hover { background: #2563eb; transform: scale(1.07); }
+        .send-btn:active { transform: scale(0.95); }
+        .send-btn:disabled { background: #334155; cursor: not-allowed; transform: none; }
+
+        /* ── Typing indicator ────────────────────────── */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 0.6rem 0.9rem;
+            border-radius: 12px;
+            background: rgba(59,130,246,0.08);
+            border: 1px solid rgba(59,130,246,0.15);
+            align-self: flex-start;
+            width: fit-content;
+        }
+        .typing-indicator span {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: #3b82f6;
+            display: inline-block;
+            animation: bounce 1.2s ease-in-out infinite;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+            40% { transform: translateY(-6px); opacity: 1; }
+        }
+
+        /* ── Voice panel layout fix ─────────────────── */
+        .voice-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        .voice-panel.hidden { display: none; }
     </style>
 </head>
 
 <body>
 
     <div id="setupModal" class="setup-modal">
-        <h2>Welcome to NovaVoice</h2>
+        <h2 style="font-size:1.6rem;margin-bottom:0.4rem;">Welcome to NovaVoice</h2>
+        <p style="color:#64748b;margin-bottom:1.5rem;font-size:0.9rem;">Connect your Gemini API key to start</p>
         <input type="password" id="apiKey" class="api-input" placeholder="Enter Gemini API Key (AIza...)">
         <button id="startSessionBtn" class="btn-start">Connect to Agent</button>
     </div>
@@ -217,13 +349,37 @@
         <span id="statusText">Disconnected</span>
     </div>
 
-    <div class="orb-container" id="orbContainer">
-        <div class="ring"></div>
-        <button class="call-button" id="callBtn">🎙️</button>
+    <!-- Mode Tabs -->
+    <div class="mode-tabs" id="modeTabs">
+        <button class="tab-btn active" id="tabVoice" onclick="switchMode('voice')">🎙️ Voice</button>
+        <button class="tab-btn" id="tabText" onclick="switchMode('text')">💬 Text Chat</button>
     </div>
 
-    <div class="transcript-container" id="transcript">
-        <div class="message system-msg">Waiting to connect...</div>
+    <!-- Voice Panel -->
+    <div class="voice-panel" id="voicePanel">
+        <div class="orb-container" id="orbContainer">
+            <div class="ring"></div>
+            <button class="call-button" id="callBtn">🎙️</button>
+        </div>
+        <div class="transcript-container" id="transcript">
+            <div class="message system-msg">Waiting to connect...</div>
+        </div>
+    </div>
+
+    <!-- Text Chat Panel -->
+    <div class="text-panel" id="textPanel">
+        <div class="transcript-container" id="textTranscript" style="height:340px;">
+            <div class="message system-msg">Type a message below to chat with the AI ✨</div>
+        </div>
+        <div class="text-input-row">
+            <textarea
+                id="textInput"
+                class="text-input"
+                placeholder="Ask anything…"
+                rows="1"
+            ></textarea>
+            <button class="send-btn" id="sendBtn" title="Send message">➤</button>
+        </div>
     </div>
 
     <script>
@@ -235,7 +391,14 @@
             statusText: document.getElementById('statusText'),
             statusDot: document.getElementById('statusDot'),
             transcript: document.getElementById('transcript'),
-            orbContainer: document.getElementById('orbContainer')
+            orbContainer: document.getElementById('orbContainer'),
+            textTranscript: document.getElementById('textTranscript'),
+            textInput: document.getElementById('textInput'),
+            sendBtn: document.getElementById('sendBtn'),
+            voicePanel: document.getElementById('voicePanel'),
+            textPanel: document.getElementById('textPanel'),
+            tabVoice: document.getElementById('tabVoice'),
+            tabText: document.getElementById('tabText')
         };
 
         let isCallActive = false;
@@ -253,6 +416,111 @@
         let micAnalyser = null;
         let aiAnalyser = null;
         let visualizerId = null;
+
+        // Text chat state
+        let currentMode = 'voice'; // 'voice' | 'text'
+        let textActiveBubble = null;
+        let textActiveRole = null;
+        let isTextWaiting = false;
+        let typingEl = null;
+
+        // ── Mode switcher ──────────────────────────────────────
+        function switchMode(mode) {
+            currentMode = mode;
+            if (mode === 'voice') {
+                UI.voicePanel.classList.remove('hidden');
+                UI.textPanel.classList.remove('visible');
+                UI.tabVoice.classList.add('active');
+                UI.tabText.classList.remove('active');
+            } else {
+                UI.voicePanel.classList.add('hidden');
+                UI.textPanel.classList.add('visible');
+                UI.tabVoice.classList.remove('active');
+                UI.tabText.classList.add('active');
+                UI.textInput.focus();
+            }
+        }
+
+        // Auto-grow textarea
+        UI.textInput.addEventListener('input', () => {
+            UI.textInput.style.height = 'auto';
+            UI.textInput.style.height = Math.min(UI.textInput.scrollHeight, 120) + 'px';
+        });
+
+        // Send on Enter (Shift+Enter = newline)
+        UI.textInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendTextMessage();
+            }
+        });
+
+        UI.sendBtn.addEventListener('click', sendTextMessage);
+
+        function sendTextMessage() {
+            const text = UI.textInput.value.trim();
+            if (!text || isTextWaiting) return;
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                addTextMessage('⚠️ Not connected. Please enter your API key first.', 'system-msg');
+                return;
+            }
+
+            // Render user bubble
+            addTextMessage(text, 'user-msg');
+            UI.textInput.value = '';
+            UI.textInput.style.height = 'auto';
+
+            // Show typing indicator
+            showTypingIndicator();
+            isTextWaiting = true;
+            UI.sendBtn.disabled = true;
+            textActiveBubble = null;
+            textActiveRole = null;
+
+            // Send as a client content turn (text only)
+            ws.send(JSON.stringify({
+                clientContent: {
+                    turns: [{ role: 'user', parts: [{ text }] }],
+                    turnComplete: true
+                }
+            }));
+        }
+
+        function showTypingIndicator() {
+            removeTypingIndicator();
+            typingEl = document.createElement('div');
+            typingEl.className = 'typing-indicator';
+            typingEl.innerHTML = '<span></span><span></span><span></span>';
+            UI.textTranscript.appendChild(typingEl);
+            UI.textTranscript.scrollTop = UI.textTranscript.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            if (typingEl) { typingEl.remove(); typingEl = null; }
+        }
+
+        function addTextMessage(text, typeClass, isChunk = false) {
+            if (isChunk) {
+                if (textActiveBubble && textActiveRole === typeClass) {
+                    textActiveBubble.innerText += text;
+                    UI.textTranscript.scrollTop = UI.textTranscript.scrollHeight;
+                    return;
+                }
+                textActiveBubble = document.createElement('div');
+                textActiveBubble.className = `message ${typeClass}`;
+                textActiveBubble.innerText = text;
+                UI.textTranscript.appendChild(textActiveBubble);
+                textActiveRole = typeClass;
+            } else {
+                const msg = document.createElement('div');
+                msg.className = `message ${typeClass}`;
+                msg.innerText = text;
+                UI.textTranscript.appendChild(msg);
+                textActiveBubble = null;
+                textActiveRole = null;
+            }
+            UI.textTranscript.scrollTop = UI.textTranscript.scrollHeight;
+        }
 
         UI.startBtn.addEventListener('click', () => {
             const key = UI.apiKeyInput.value.trim();
@@ -381,7 +649,13 @@
                     if (content.modelTurn) {
                         for (const part of content.modelTurn.parts) {
                             if (part.inlineData) {
-                                playAudioBase64(part.inlineData.data);
+                                // Audio chunk — only play in voice mode
+                                if (currentMode === 'voice') playAudioBase64(part.inlineData.data);
+                            }
+                            if (part.text) {
+                                // Text response from AI — display in text chat panel
+                                removeTypingIndicator();
+                                addTextMessage(part.text, 'ai-msg', true);
                             }
                         }
                     }
@@ -389,6 +663,14 @@
                     if (content.turnComplete) {
                         setSpeakingState(false);
                         activeBubble = null;
+                        // Re-enable text input
+                        if (isTextWaiting) {
+                            removeTypingIndicator();
+                            isTextWaiting = false;
+                            UI.sendBtn.disabled = false;
+                            textActiveBubble = null;
+                            textActiveRole = null;
+                        }
                     }
                 }
             };
